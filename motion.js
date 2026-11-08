@@ -80,7 +80,7 @@
 
     if (page === "home") {
       // hero drifts and the headline lifts away as you leave it
-      gsap.to(".hero-slides", { yPercent: 14, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
+      gsap.to(".hero-collage", { yPercent: 7, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
       gsap.to(".hero-copy", { yPercent: -30, opacity: 0, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "70% top", scrub: true } });
 
       // statement lights up word by word

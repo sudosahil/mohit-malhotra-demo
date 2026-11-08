@@ -126,33 +126,43 @@
 
   /* ---------- home ---------- */
   function home() {
-    const slides = [
-      // [photo, story, desktop focus, phone focus (the couple, when the frame is cropped to a tall rectangle)]
-      ["album01", "jaydeep-takshsheela", "50% 45%", "52% 75%"],
-      ["wm01", "raman-kasturi", "50% 30%", "68% 35%"],
-      ["wm05", "jaydeep-takshsheela", "50% 35%", "46% 30%"],
-      ["wm10", "angad-shalu", "50% 55%", "47% 60%"]
+    // hero: one frame, several photographs. Each cell keeps its own pool and swaps on its own rhythm.
+    const pools = [
+      ["album01", "wm04", "album02", "wm08"],   // large
+      ["wm03", "wm06", "wm09"],                  // tall
+      ["wm01", "album03", "wm07"],               // small
+      ["wm05", "wm02", "album04"],               // small
+      ["album05", "wm10", "wm04"]                // wide
     ];
-    const hero = $(".hero");
-    const wrap = $(".hero-slides", hero);
-    wrap.innerHTML = slides.map(([id, sid, pos, pm], i) =>
-      `<div class="hero-slide ${i === 0 ? "on" : ""}" style="--src:url(img/${id}.jpg)"><img src="img/${id}.jpg" alt="${BY_ID[sid].names}, ${BY_ID[sid].city}" style="object-position:${pos};--pm:${pm}"${i ? 'loading="lazy"' : 'fetchpriority="high"'}></div>`).join("");
-    const cap = $(".hero-cap", hero);
-    const ticks = $(".ticks", hero);
-    ticks.innerHTML = slides.map(() => "<i></i>").join("");
-    let cur = 0, timer;
-    const show = (n) => {
-      cur = (n + slides.length) % slides.length;
-      $$(".hero-slide", wrap).forEach((el, i) => el.classList.toggle("on", i === cur));
-      const s = BY_ID[slides[cur][1]];
-      cap.firstElementChild.innerHTML = `${s.names}<br><span>${s.city}</span>`;
-      cap.firstElementChild.href = `story.html?s=${s.id}`;
-      $$("i", ticks).forEach((t, i) => { t.classList.remove("on"); if (i === cur) { void t.offsetWidth; t.classList.add("on"); } });
+    const collage = document.createElement("div");
+    collage.className = "collage";
+    collage.setAttribute("role", "group");
+    collage.setAttribute("aria-label", "Featured wedding photographs");
+    collage.innerHTML = pools.map((pool) =>
+      `<figure class="cell"><img class="on" src="img/${pool[0]}.jpg" alt="${ALT[pool[0]]}" fetchpriority="high"><img alt=""></figure>`).join("");
+    $(".hero-collage").appendChild(collage);
+
+    const timers = [];
+    const swap = (cell, pool, state) => {
+      state.k = (state.k + 1) % pool.length;
+      const layers = $$("img", cell), cur = layers.find(l => l.classList.contains("on")), nxt = layers.find(l => l !== cur);
+      const show = () => { nxt.classList.add("on"); cur.classList.remove("on"); };
+      nxt.alt = ALT[pool[state.k]];
+      nxt.src = `img/${pool[state.k]}.jpg`;
+      nxt.decode ? nxt.decode().then(show, show) : (nxt.onload = show);
     };
-    const start = () => { clearInterval(timer); if (!reduced) timer = setInterval(() => show(cur + 1), 6000); };
-    // the slideshow, caption and progress ticks begin once the entrance has finished
-    document.addEventListener("site:ready", () => { show(0); setTimeout(start, 600); }, { once: true });
-    document.addEventListener("visibilitychange", () => document.hidden ? clearInterval(timer) : start());
+    const startCells = () => {
+      stopCells();
+      if (reduced) return;
+      $$(".cell", collage).forEach((cell, i) => {
+        const state = { k: 0 };
+        timers.push(setTimeout(() => { swap(cell, pools[i], state); timers.push(setInterval(() => swap(cell, pools[i], state), 6200 + i * 900)); }, 2400 + i * 1150));
+      });
+    };
+    const stopCells = () => { while (timers.length) { const t = timers.pop(); clearTimeout(t); clearInterval(t); } };
+    // the cells start swapping once the entrance has finished
+    document.addEventListener("site:ready", startCells, { once: true });
+    document.addEventListener("visibilitychange", () => { if (!document.body.classList.contains("ready")) return; document.hidden ? stopCells() : startCells(); });
 
     const t = (id, cls) => tile(BY_ID[id], cls);
     $("#home-spread").innerHTML =
@@ -367,9 +377,9 @@
 
   /* ---------- boot ---------- */
   /* ---------- entrance (home, first visit of a session; add ?intro to the address to replay it) ----------
-     The hero's own pieces are gathered on a dark screen: a pile of the hero photographs and the name.
-     When the first photograph has loaded they place themselves: the top photo grows into the hero photograph,
-     the name flies up and becomes the logo, and the other photographs fan away. */
+     A miniature of the hero collage is assembled on a dark screen from the same photographs, with the name beneath.
+     When the hero photographs have loaded, the whole collage grows into the hero frame and the name flies up
+     to become the logo. */
   function entrance() {
     const el = $(".loader");
     const ready = () => { if (!document.body.classList.contains("ready")) { document.body.classList.add("ready"); emit("site:ready"); } };
@@ -382,43 +392,47 @@
     document.body.classList.add("loading");
     setTimeout(finish, 12000); // never leave anyone stuck behind the loader
 
-    const pile = $$(".lp", el), top = $(".lp-top", el), name = $(".loader-name", el), tag = $(".loader-tag", el), bar = $(".loader-bar", el);
-    const rest = pile.filter(c => c !== top);
-    const tilt = [-9, 7, -3];       // back to front
-    const nudge = [-26, 24, -7];    // percent of a card's width
+    const heroCollage = $(".hero-collage .collage"), name = $(".loader-name", el), tag = $(".loader-tag", el), bar = $(".loader-bar", el);
+    const r0 = heroCollage.getBoundingClientRect();
 
-    // 1. gather: the photographs drop into a pile, then the name and tagline arrive
-    gsap.set(pile, { opacity: 0, y: 80 });
+    // 1. gather: a miniature of the hero collage, built from the same photographs. Its pieces fly in from scattered spots.
+    const frame = document.createElement("div");
+    frame.className = "loader-frame";
+    frame.style.aspectRatio = r0.width + " / " + r0.height;
+    const mini = heroCollage.cloneNode(true);
+    frame.appendChild(mini);
+    el.insertBefore(frame, name);
+    const pieces = $$(".cell", mini);
+    const scatter = [[-1, -0.7, -7], [0.9, -1, 6], [1.2, 0.6, -5], [-0.9, 0.9, 5], [0.2, 1.3, 3]];   // x and y in frame widths, then rotation
+    const fw = frame.getBoundingClientRect().width;
     gsap.set(name, { opacity: 0, y: 24 });
     gsap.set(tag, { opacity: 0 });
     gsap.timeline()
-      .to(pile, { opacity: 1, y: 0, duration: 1.1, ease: "power3.out", stagger: 0.13 }, 0.1)
-      .to(rest, { rotate: (i) => tilt[i], xPercent: (i) => nudge[i], duration: 1.2, ease: "power3.out", stagger: 0.13 }, 0.55)
-      .to(name, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 0.9)
-      .to(tag, { opacity: 1, duration: 0.8 }, 1.2);
+      .from(pieces, { x: (i) => scatter[i][0] * fw, y: (i) => scatter[i][1] * fw, rotate: (i) => scatter[i][2], scale: 1.3, opacity: 0, duration: 1.35, ease: "power3.out", stagger: 0.11 }, 0.1)
+      .to(name, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 1.0)
+      .to(tag, { opacity: 1, duration: 0.8 }, 1.3);
 
-    // 2. place: once the hero photograph is ready (and the gathering has had its moment)
-    const first = $(".hero-slide img");
+    // 2. place: once the hero photographs are ready (and the gathering has had its moment) the whole collage grows into the hero
+    const first = $(".cell img.on", heroCollage);
     const imageReady = first && first.decode ? first.decode().catch(() => {}) : Promise.resolve();
-    const minimum = new Promise(r => setTimeout(r, 2400));
+    const minimum = new Promise(r => setTimeout(r, 2500));
     const ceiling = new Promise(r => setTimeout(r, 6500));
     const place = () => {
       try {
-        const target = first.getBoundingClientRect();          // where the hero photograph really is (full screen on desktop, the framed photo on phones)
-        const tr = top.getBoundingClientRect();
-        $("img", top).style.objectPosition = getComputedStyle(first).objectPosition;
+        const target = heroCollage.getBoundingClientRect();     // where the real collage is (it has the same proportions as the miniature)
+        const tr = frame.getBoundingClientRect();
+        const s = target.width / tr.width;
+        mini.style.setProperty("--cgap", (10 / s) + "px");       // so the gaps land at the hero's real gap
         const textRect = (node) => { const r = document.createRange(); r.selectNodeContents(node); return r.getBoundingClientRect(); };
         const from = textRect(name.firstChild), to = textRect($(".wordmark").firstChild);   // the real logo sits hidden under the loader
-        gsap.set(top, { position: "fixed", left: tr.left, top: tr.top, right: "auto", bottom: "auto", width: tr.width, height: tr.height, x: 0, y: 0, rotate: 0 });
         gsap.timeline({ onComplete: finish })
           .to(bar, { opacity: 0, duration: 0.3 }, 0)
           .to(tag, { opacity: 0, duration: 0.35 }, 0)
-          .to(rest, { opacity: 0, x: (i) => [-1, 1, -0.6][i] * innerWidth * 0.4, y: (i) => [-0.2, 0.3, -0.35][i] * innerHeight * 0.5, rotate: (i) => tilt[i] * 3, duration: 1, ease: "power3.in" }, 0)
-          .to(top, { left: target.left, top: target.top, width: target.width, height: target.height, duration: 1.2, ease: "power3.inOut" }, 0.12)
-          .to(el, { backgroundColor: "rgba(27,30,28,0)", duration: 0.9, ease: "power1.in" }, 0.45)
+          .to(frame, { x: (target.left + target.width / 2) - (tr.left + tr.width / 2), y: (target.top + target.height / 2) - (tr.top + tr.height / 2), scale: s, duration: 1.25, ease: "power3.inOut" }, 0.1)
+          .to(el, { backgroundColor: "rgba(27,30,28,0)", duration: 0.95, ease: "power1.in" }, 0.45)
           .to(name, { x: to.left - from.left, y: to.top - from.top, scale: to.width / from.width, duration: 1.15, ease: "power3.inOut" }, 0.12)
-          .add(() => { document.body.classList.remove("loading"); ready(); }, 1.1)   // the real header fades in under the landing name; the headline starts to rise
-          .to([name, el], { opacity: 0, duration: 0.3 }, 1.3);
+          .add(() => { document.body.classList.remove("loading"); ready(); }, 1.15)   // the real header fades in under the landing name; the headline starts to rise
+          .to([name, el], { opacity: 0, duration: 0.3 }, 1.35);
       } catch (e) { finish(); }
     };
     Promise.race([Promise.all([imageReady, minimum]), ceiling]).then(place);
