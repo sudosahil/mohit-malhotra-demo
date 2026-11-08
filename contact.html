@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ECEDEA">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>Contact | Mohit Malhotra Photography</title>
+<meta name="description" content="Check Mohit Malhotra's available wedding dates and send an enquiry.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bellefair&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="contact">
+<div class="wipe cover"></div>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main">
+<section class="band page-top">
+  <h1 class="page-title">Tell me your date</h1>
+  <div class="contact-grid">
+    <div class="cal">
+      <h2>Is your date free?</h2>
+      <p class="hint">Struck-through dates are already booked. Choose a free one and it fills the form.</p>
+      <div class="cal-head"><button id="cal-prev" type="button" aria-label="Previous month">Earlier</button><strong id="cal-title" aria-live="polite"></strong><button id="cal-next" type="button" aria-label="Next month">Later</button></div>
+      <div class="days" id="cal-grid" role="group" aria-label="Wedding date"></div>
+      <div class="legend"><span>Free</span><s>Booked</s></div>
+    </div>
+    <div class="form">
+      <h2>Send an enquiry</h2>
+      <form id="enquiry">
+        <label class="field"><span>Your names</span><input name="names" required autocomplete="name" placeholder="Aarav and Meera"></label>
+        <label class="field"><span>Email</span><input name="email" type="email" required autocomplete="email"></label>
+        <label class="field"><span>Wedding date</span><input id="f-date" name="date" readonly placeholder="Choose from the calendar"></label>
+        <p id="date-note" tabindex="-1" aria-live="polite" style="margin:-14px 0 26px;color:var(--slate);font-size:.9rem"></p>
+        <div class="two">
+          <label class="field"><span>City</span><select name="city"><option>Mumbai</option><option>Pune</option><option>Nagpur</option><option>Somewhere else</option></select></label>
+          <label class="field"><span>Type of wedding</span><select name="kind"><option>Traditional</option><option>Candid and traditional</option><option>Pre-wedding shoot</option><option>Engagement</option></select></label>
+        </div>
+        <label class="field"><span>How did you find Mohit?</span><input name="found"></label>
+        <button class="submit" type="submit">Send enquiry</button>
+      </form>
+      <div class="sent" id="sent" hidden aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer id="site-footer"></footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="app.js"></script>
+<script src="motion.js"></script>
+</body>
+</html>
