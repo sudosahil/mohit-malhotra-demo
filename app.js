@@ -366,24 +366,62 @@
   }
 
   /* ---------- boot ---------- */
-  /* ---------- entrance (home, first visit of a session) ---------- */
+  /* ---------- entrance (home, first visit of a session; add ?intro to the address to replay it) ----------
+     The hero's own pieces are gathered on a dark screen: a pile of the hero photographs and the name.
+     When the first photograph has loaded they place themselves: the top photo grows into the hero photograph,
+     the name flies up and becomes the logo, and the other photographs fan away. */
   function entrance() {
     const el = $(".loader");
-    const ready = () => { document.body.classList.add("ready"); emit("site:ready"); };
+    const ready = () => { if (!document.body.classList.contains("ready")) { document.body.classList.add("ready"); emit("site:ready"); } };
+    const finish = () => { el && el.remove(); document.body.classList.remove("loading"); ready(); };
     let seen = null;
     try { seen = sessionStorage.getItem("mm-entered"); } catch (e) { /* storage unavailable: just show it */ }
-    if (!el || reduced || seen) { el && el.remove(); ready(); return; }
+    const replay = /[?&]intro\b/.test(location.search);
+    if (!el || reduced || !window.gsap || (seen && !replay)) { finish(); return; }
     try { sessionStorage.setItem("mm-entered", "1"); } catch (e) { /* ignore */ }
     document.body.classList.add("loading");
+    setTimeout(finish, 12000); // never leave anyone stuck behind the loader
+
+    const pile = $$(".lp", el), top = $(".lp-top", el), name = $(".loader-name", el), tag = $(".loader-tag", el), bar = $(".loader-bar", el);
+    const rest = pile.filter(c => c !== top);
+    const tilt = [-9, 7, -3];       // back to front
+    const nudge = [-26, 24, -7];    // percent of a card's width
+
+    // 1. gather: the photographs drop into a pile, then the name and tagline arrive
+    gsap.set(pile, { opacity: 0, y: 80 });
+    gsap.set(name, { opacity: 0, y: 24 });
+    gsap.set(tag, { opacity: 0 });
+    gsap.timeline()
+      .to(pile, { opacity: 1, y: 0, duration: 1.1, ease: "power3.out", stagger: 0.13 }, 0.1)
+      .to(rest, { rotate: (i) => tilt[i], xPercent: (i) => nudge[i], duration: 1.2, ease: "power3.out", stagger: 0.13 }, 0.55)
+      .to(name, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 0.9)
+      .to(tag, { opacity: 1, duration: 0.8 }, 1.2);
+
+    // 2. place: once the hero photograph is ready (and the gathering has had its moment)
     const first = $(".hero-slide img");
     const imageReady = first && first.decode ? first.decode().catch(() => {}) : Promise.resolve();
-    const minimum = new Promise(r => setTimeout(r, 2100));
-    const ceiling = new Promise(r => setTimeout(r, 5000));
-    Promise.race([Promise.all([imageReady, minimum]), ceiling]).then(() => {
-      el.classList.add("done");
-      el.addEventListener("transitionend", () => el.remove(), { once: true });
-      setTimeout(() => { document.body.classList.remove("loading"); ready(); }, 380);
-    });
+    const minimum = new Promise(r => setTimeout(r, 2400));
+    const ceiling = new Promise(r => setTimeout(r, 6500));
+    const place = () => {
+      try {
+        const target = first.getBoundingClientRect();          // where the hero photograph really is (full screen on desktop, the framed photo on phones)
+        const tr = top.getBoundingClientRect();
+        $("img", top).style.objectPosition = getComputedStyle(first).objectPosition;
+        const textRect = (node) => { const r = document.createRange(); r.selectNodeContents(node); return r.getBoundingClientRect(); };
+        const from = textRect(name.firstChild), to = textRect($(".wordmark").firstChild);   // the real logo sits hidden under the loader
+        gsap.set(top, { position: "fixed", left: tr.left, top: tr.top, right: "auto", bottom: "auto", width: tr.width, height: tr.height, x: 0, y: 0, rotate: 0 });
+        gsap.timeline({ onComplete: finish })
+          .to(bar, { opacity: 0, duration: 0.3 }, 0)
+          .to(tag, { opacity: 0, duration: 0.35 }, 0)
+          .to(rest, { opacity: 0, x: (i) => [-1, 1, -0.6][i] * innerWidth * 0.4, y: (i) => [-0.2, 0.3, -0.35][i] * innerHeight * 0.5, rotate: (i) => tilt[i] * 3, duration: 1, ease: "power3.in" }, 0)
+          .to(top, { left: target.left, top: target.top, width: target.width, height: target.height, duration: 1.2, ease: "power3.inOut" }, 0.12)
+          .to(el, { backgroundColor: "rgba(27,30,28,0)", duration: 0.9, ease: "power1.in" }, 0.45)
+          .to(name, { x: to.left - from.left, y: to.top - from.top, scale: to.width / from.width, duration: 1.15, ease: "power3.inOut" }, 0.12)
+          .add(() => { document.body.classList.remove("loading"); ready(); }, 1.1)   // the real header fades in under the landing name; the headline starts to rise
+          .to([name, el], { opacity: 0, duration: 0.3 }, 1.3);
+      } catch (e) { finish(); }
+    };
+    Promise.race([Promise.all([imageReady, minimum]), ceiling]).then(place);
   }
 
   chrome();
