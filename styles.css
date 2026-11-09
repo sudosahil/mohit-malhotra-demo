@@ -312,7 +312,7 @@ body.loading { overflow: hidden; }
 .reel-item { flex: none; height: 62svh; position: relative; display: block; text-decoration: none; color: inherit; }
 .reel-item.land { aspect-ratio: 3 / 2; } .reel-item.port { aspect-ratio: 2 / 3; }
 .reel-img { height: 100%; overflow: hidden; border-radius: var(--r); background: #3a1c22; }
-.reel-item img { height: 100%; width: 118%; max-width: none; object-fit: cover; }
+.reel-item img { height: 100%; width: 100%; max-width: none; object-fit: cover; }
 .reel-cap { position: absolute; left: 0; top: calc(100% + 16px); font-size: .9rem; color: #c4aaae; white-space: nowrap; }
 .reel-end { flex: none; padding-right: 8vw; font-size: 1.15rem; }
 @media (max-height: 559px), (prefers-reduced-motion: reduce) {
@@ -440,7 +440,7 @@ body.loading { overflow: hidden; }
   .reel-item { height: 62svh; width: auto; max-width: none; }
   .reel-item.land { aspect-ratio: 3 / 2; } .reel-item.port { aspect-ratio: 2 / 3; width: auto; max-width: none; }
   .reel-img { position: static; height: 100%; }
-  .reel-item img { width: 118%; height: 100%; }
+  .reel-item img { width: 100%; height: 100%; }
   .reel-end { padding-right: 14vw; }
 
   /* what I photograph: pinned, a photograph behind, one service lit at a time */
@@ -457,3 +457,15 @@ body.loading { overflow: hidden; }
 
 /* phone pages: leave room for the two-line header, which the generic .band padding was overriding */
 @media (max-width: 720px) { .band.page-top { padding-top: 120px; } }
+
+/* reel zoom: a full-screen copy of the strip grows out of the first frame, runs edge to edge, then shrinks into the last frame */
+.reel-full { display: none; position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+.reel-full.on { display: block; }
+.reel-full-clip { position: absolute; inset: 0; overflow: hidden; will-change: transform, clip-path; opacity: 0; }
+.reel-full-track { display: flex; height: 100%; width: max-content; will-change: transform; }
+.rf-slide { position: relative; flex: none; height: 100%; overflow: hidden; background: var(--night); }
+.rf-slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; z-index: 1; }
+/* a photograph whose shape is far from the screen's is shown whole over a blurred copy of itself, never cropped hard */
+.rf-slide.ambient::before { content: ""; position: absolute; inset: -8%; background: var(--src) center / cover no-repeat; filter: blur(34px) brightness(.55) saturate(1.1); }
+.rf-slide.ambient img { object-fit: contain; }
+body.immersive .site-header { opacity: 0; pointer-events: none; }

@@ -173,8 +173,12 @@
     const reel = [["album01", "land"], ["wm03", "port"], ["wm01", "land"], ["wm06", "port"], ["wm04", "land"], ["album04", "land"], ["wm09", "port"], ["wm10", "land"], ["album05", "land"]];
     $("#reel").innerHTML =
       `<div class="reel-intro"><h2 class="statement">Frames I keep going back to.</h2></div>` +
-      reel.map(([id, k]) => { const s = sidOf(id); return `<a class="reel-item ${k}" href="story.html?s=${s.id}"><div class="reel-img">${img(id, ALT[id], `loading="${innerWidth > 860 ? "eager" : "lazy"}" decoding="async"`)}</div><span class="reel-cap">${s.names}, ${s.city}</span></a>`; }).join("") +
+      reel.map(([id, k]) => { const s = sidOf(id); return `<a class="reel-item ${k}" href="story.html?s=${s.id}"><div class="reel-img">${img(id, ALT[id], `loading="eager" decoding="async"`)}</div><span class="reel-cap">${s.names}, ${s.city}</span></a>`; }).join("") +
       `<div class="reel-end"><a class="textlink" href="portfolio.html">See every wedding</a></div>`;
+    // the full-screen copy of the strip that the zoom grows into (positioned and shown by motion.js)
+    $(".reel").insertAdjacentHTML("beforeend", `<div class="reel-full" aria-hidden="true"><div class="reel-full-clip"><div class="reel-full-track">${
+      reel.map(([id]) => `<div class="rf-slide" data-ar="${(DIM[id][0] / DIM[id][1]).toFixed(3)}" style="--src:url(img/${id}.jpg)"><img src="img/${id}.jpg" alt="" decoding="async"></div>`).join("")
+    }</div></div></div>`);
 
     // slow filmstrip of everything, second copy hidden from assistive tech
     const ids = ["wm08", "album02", "wm03", "wm05", "album04", "wm06", "wm01", "album03", "wm04", "wm09", "album05", "wm02", "wm10", "wm07", "album01"];

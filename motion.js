@@ -83,23 +83,107 @@
       gsap.to(".hero-collage", { yPercent: 7, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
       gsap.to(".hero-copy", { yPercent: -30, opacity: 0, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "70% top", scrub: true } });
 
-      // statement lights up word by word
-      const st = $("#intro-statement");
-      if (st) gsap.fromTo(splitWords(st), { opacity: 0.14 }, { opacity: 1, stagger: 0.1, ease: "none", scrollTrigger: { trigger: st, start: "top 82%", end: "bottom 45%", scrub: true } });
+      // Pin a section (centred on screen when it fits) and play a timeline across the scroll distance.
+      const hold = (section, screens, build) => {
+        if (!section) return null;
+        const tl = gsap.timeline({
+          defaults: { ease: "none" },
+          scrollTrigger: {
+            trigger: section, pin: true, scrub: 0.6, anticipatePin: 1, invalidateOnRefresh: true,
+            start: () => (section.offsetHeight < innerHeight - 40 ? "center center" : "top top"),
+            end: () => "+=" + Math.round(innerHeight * screens)
+          }
+        });
+        build(tl);
+        return tl;
+      };
 
       const mm = gsap.matchMedia();
-      // the pinned scenes run on desktop and on phones alike; only very short (landscape) screens get the stacked layouts from the CSS
+      // On any screen that is tall enough, each section holds the page while its pieces arrive in order, then lets go.
+      // (Very short landscape screens keep the plain, static layouts from the CSS.)
       mm.add("(min-height: 560px)", () => {
-        // pinned horizontal reel with parallax inside each frame
-        const section = $(".reel"), track = $("#reel");
-        const dist = () => track.scrollWidth - innerWidth + 8;
-        const tween = gsap.to(track, { x: () => -dist(), ease: "none", scrollTrigger: { trigger: section, pin: true, scrub: 0.8, start: "top top", end: () => "+=" + dist(), invalidateOnRefresh: true, anticipatePin: 1 } });
-        $$(".reel-item").forEach((item) => {
-          gsap.fromTo($("img", item), { x: "-9%" }, { x: "0%", ease: "none", scrollTrigger: { trigger: item, containerAnimation: tween, start: "left 100%", end: "right 0%", scrub: true } });
+        // 1. The statement: held until every word has lit, then the paragraph beside it arrives.
+        hold($(".intro"), 1.2, (tl) => {
+          const words = splitWords($("#intro-statement"));
+          const step = 0.12;
+          tl.fromTo(words, { opacity: 0.14 }, { opacity: 1, stagger: step, duration: 0.5 }, 0)
+            .fromTo(".intro .side", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.8 }, words.length * step + 0.2);
         });
 
-        // "What I photograph": zoom out into the section with a photograph big behind it,
-        // then scroll steps through each service, swapping the photograph. After the last one the page carries on.
+        // 2. "Frames I keep going back to": the framed layout stays as it is. Scrolling grows a full-screen copy of the
+        //    strip out of the first frame; every photograph then runs edge to edge with no gap; after the last one it
+        //    shrinks back into the last frame and the page carries on.
+        const reelSection = $(".reel"), reelTrack = $("#reel"), full = $(".reel-full"), clip = $(".reel-full-clip"), strip = $(".reel-full-track");
+        if (reelSection && full) {
+          const frames = $$(".reel-item .reel-img"), slides = $$(".rf-slide", full), N = slides.length;
+          let G = null;
+          const rel = (el) => { const r = el.getBoundingClientRect(), s = reelSection.getBoundingClientRect(); return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height }; };
+          const measure = () => {
+            const vw = reelSection.clientWidth, vh = reelSection.clientHeight;
+            gsap.set(reelTrack, { x: 0 });
+            const first = rel(frames[0]);
+            const xEnd = -(reelTrack.scrollWidth - vw + 8);       // where the framed row ends up, once the zoom has covered it
+            gsap.set(reelTrack, { x: xEnd });
+            const last = rel(frames[N - 1]);
+            gsap.set(reelTrack, { x: 0 });
+            const radius = parseFloat(getComputedStyle(frames[0]).borderTopLeftRadius) || 0;
+            slides.forEach((s) => {
+              s.style.width = vw + "px";
+              const ratio = parseFloat(s.dataset.ar) / (vw / vh);   // photo shape relative to screen shape
+              s.classList.toggle("ambient", ratio < 0.66 || ratio > 1.55);
+            });
+            G = { vw, vh, first, last, xEnd, radius, whole: { x: 0, y: 0, w: vw, h: vh } };
+          };
+          // place the full-screen copy so that it exactly covers `from` -> `to` rectangles at progress z
+          const place = (from, to, z, r0, r1) => {
+            const l = (a, b) => a + (b - a) * z;
+            const R = { x: l(from.x, to.x), y: l(from.y, to.y), w: l(from.w, to.w), h: l(from.h, to.h) };
+            const s = Math.max(R.w / G.vw, R.h / G.vh);
+            gsap.set(clip, { x: R.x + R.w / 2 - G.vw / 2, y: R.y + R.h / 2 - G.vh / 2, scale: s });
+            const ix = (G.vw - R.w / s) / 2, iy = (G.vh - R.h / s) / 2;
+            clip.style.clipPath = `inset(${iy}px ${ix}px ${iy}px ${ix}px round ${l(r0, r1) / s}px)`;
+          };
+          measure();
+          full.classList.add("on");
+          const onRefresh = () => measure();
+          ScrollTrigger.addEventListener("refreshInit", onRefresh);
+
+          const zoomIn = 0.9, zoomOut = 0.9, across = N - 1, total = zoomIn + across + zoomOut;
+          const inState = { z: 0 }, outState = { z: 0 };
+          const tl = gsap.timeline({
+            defaults: { ease: "none" },
+            scrollTrigger: {
+              trigger: reelSection, start: "top top", pin: true, scrub: 0.6, anticipatePin: 1, invalidateOnRefresh: true,
+              end: () => "+=" + Math.round(innerHeight * 0.85 * total),
+              // the header steps aside while the photographs fill the screen
+              onUpdate: (self) => document.body.classList.toggle("immersive", self.progress > (zoomIn * 0.6) / total && self.progress < (total - zoomOut * 0.6) / total),
+              onLeave: () => document.body.classList.remove("immersive"),
+              onLeaveBack: () => document.body.classList.remove("immersive")
+            }
+          });
+          tl.set(clip, { opacity: 0 }, 0)
+            .to(clip, { opacity: 1, duration: 0.04 }, 0)
+            .to(inState, { z: 1, duration: zoomIn, ease: "power2.inOut", onUpdate: () => place(G.first, G.whole, inState.z, G.radius, 0) }, 0)
+            .set(reelTrack, { x: () => G.xEnd }, zoomIn)                // hidden behind the full-screen copy
+            .fromTo(strip, { x: 0 }, { x: () => -(N - 1) * G.vw, duration: across }, zoomIn)
+            .to(outState, { z: 1, duration: zoomOut, ease: "power2.inOut", onUpdate: () => place(G.whole, G.last, outState.z, 0, G.radius) }, zoomIn + across)
+            .to(clip, { opacity: 0, duration: 0.04 }, total - 0.04);
+
+          return () => { ScrollTrigger.removeEventListener("refreshInit", onRefresh); full.classList.remove("on"); document.body.classList.remove("immersive"); };
+        }
+      });
+
+      // "Recent weddings": the mosaic's frames open one after another as they come into view
+      $$(".spread .tile .frame").forEach((f) => revealImage(f));
+
+      mm.add("(min-height: 560px)", () => {
+        // 3. The proof row: the three lines arrive one by one.
+        hold($('[aria-label="Recognition"]'), 0.9, (tl) => {
+          tl.fromTo(".proof p", { opacity: 0, y: 34 }, { opacity: 1, y: 0, stagger: 0.55, duration: 0.6 }, 0);
+        });
+
+        // 4. "What I photograph": zoom out into the section with a photograph big behind it,
+        //    then scroll steps through each service, swapping the photograph. After the last one the page carries on.
         const focus = $(".focus");
         if (focus) {
           const bg = $(".focus-bg", focus), photos = $$("img", bg), items = $$(".focus-item", focus), n = items.length;
@@ -118,21 +202,25 @@
             onUpdate: (self) => { const i = Math.min(n - 1, Math.floor(self.progress * n)); if (i !== cur) { cur = i; show(i); } }
           });
         }
-      });
 
-      $$(".spread .tile .frame").forEach((f) => revealImage(f));
+        // 5. The process: held while the heading arrives, the line draws and each step lights in turn.
+        hold($(".process"), 1.6, (tl) => {
+          tl.fromTo(".process .statement", { opacity: 0.2, y: 22 }, { opacity: 1, y: 0, duration: 0.6 }, 0)
+            .fromTo(".process-line i", { scaleX: 0 }, { scaleX: 1, duration: 2.4 }, 0.5);
+          $$(".step").forEach((s, i) => tl.fromTo(s, { opacity: 0.15, y: 26 }, { opacity: 1, y: 0, duration: 0.6 }, 0.6 + i * 0.6));
+        });
 
-      // process line draws as you read down it (the line is hidden on narrow screens, so the steps stay fully visible there)
-      mm.add("(min-width: 861px)", () => {
-        gsap.to(".process-line i", { scaleX: 1, ease: "none", scrollTrigger: { trigger: ".process", start: "top 72%", end: "bottom 72%", scrub: true } });
+        // 6. The closing statement: held while it wipes in, then the line beneath it and the link.
+        hold($(".closer"), 1.1, (tl) => {
+          tl.fromTo(".closer .statement", { clipPath: "inset(-10% 100% -10% 0)" }, { clipPath: "inset(-10% -2% -10% -2%)", duration: 0.9 }, 0)
+            .fromTo(".closer p", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.5 }, 0.6)
+            .fromTo(".closer .textlink", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.5 }, 0.95);
+        });
       });
-      $$(".step").forEach((s) => gsap.fromTo(s, { opacity: 0.22 }, { opacity: 1, ease: "none", scrollTrigger: { trigger: s, start: "top 88%", end: "top 62%", scrub: true } }));
 
       // the filmstrip only runs while it is on screen
       const strip = $(".strip-track");
       if (strip) new IntersectionObserver(([e]) => strip.classList.toggle("is-off", !e.isIntersecting)).observe(strip);
-      // closing statement
-      gsap.from(".closer .statement", { clipPath: "inset(0 100% 0 0)", duration: 1.4, ease: "power3.inOut", scrollTrigger: { trigger: ".closer", start: "top 70%", once: true }, clearProps: "clipPath" });
     }
 
     if (page === "portfolio") $$(".wall .tile .frame").forEach((f) => revealImage(f));
