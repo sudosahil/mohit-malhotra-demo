@@ -184,7 +184,7 @@ body.loading { overflow: hidden; }
 @media (max-width: 720px) { .quote, .quote-nav { grid-column: 1 / -1; } }
 
 /* closing */
-.closer { background: var(--surface); color: var(--mist); }
+.closer { background: var(--surface); color: var(--mist); min-height: 100svh; display: flex; flex-direction: column; justify-content: center; }
 .closer .statement { font-size: clamp(2.3rem, 5.8vw, 5.2rem); line-height: 1.05; max-width: 13ch; }
 .closer p { color: #bfc8d6; max-width: 30rem; margin: 28px 0 32px; }
 .closer .textlink { font-size: 1.15rem; }

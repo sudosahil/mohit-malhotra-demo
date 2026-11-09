@@ -179,7 +179,7 @@
       mm.add("(min-height: 560px)", () => {
         // 3. The proof row: the three lines arrive one by one.
         hold($('[aria-label="Recognition"]'), 0.9, (tl) => {
-          tl.fromTo(".proof p", { opacity: 0, y: 34 }, { opacity: 1, y: 0, stagger: 0.55, duration: 0.6 }, 0);
+          tl.fromTo(".proof p", { opacity: 0.16, y: 20 }, { opacity: 1, y: 0, stagger: 0.55, duration: 0.6 }, 0);
         });
 
         // 4. "What I photograph": zoom out into the section with a photograph big behind it,
@@ -212,9 +212,9 @@
 
         // 6. The closing statement: held while it wipes in, then the line beneath it and the link.
         hold($(".closer"), 1.1, (tl) => {
-          tl.fromTo(".closer .statement", { clipPath: "inset(-10% 100% -10% 0)" }, { clipPath: "inset(-10% -2% -10% -2%)", duration: 0.9 }, 0)
-            .fromTo(".closer p", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.5 }, 0.6)
-            .fromTo(".closer .textlink", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.5 }, 0.95);
+          tl.fromTo(".closer .statement", { opacity: 0.16, y: 26 }, { opacity: 1, y: 0, duration: 0.9 }, 0)
+            .fromTo(".closer p", { opacity: 0.16, y: 16 }, { opacity: 1, y: 0, duration: 0.5 }, 0.6)
+            .fromTo(".closer .textlink", { opacity: 0.16, y: 16 }, { opacity: 1, y: 0, duration: 0.5 }, 0.95);
         });
       });
 
