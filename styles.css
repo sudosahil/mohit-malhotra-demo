@@ -462,8 +462,8 @@ body.loading { overflow: hidden; }
 /* reel zoom: a full-screen copy of the strip grows out of the first frame, runs edge to edge, then shrinks into the last frame */
 .reel-full { display: none; position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
 .reel-full.on { display: block; }
-.reel-full-clip { position: absolute; inset: 0; overflow: hidden; will-change: transform, clip-path; opacity: 0; }
-.reel-full-track { display: flex; height: 100%; width: max-content; will-change: transform; }
+.reel-full-clip { position: absolute; inset: 0; overflow: hidden; background: var(--surface) var(--grain); will-change: transform, clip-path; opacity: 0; }
+.reel-full-track { display: flex; gap: clamp(8px, 1vw, 14px); height: 100%; width: max-content; will-change: transform; }
 .rf-slide { position: relative; flex: none; height: 100%; overflow: hidden; background: var(--night); }
 .rf-slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; z-index: 1; }
 /* a photograph whose shape is far from the screen's is shown whole over a blurred copy of itself, never cropped hard */

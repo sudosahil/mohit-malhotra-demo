@@ -132,7 +132,8 @@
               const ratio = parseFloat(s.dataset.ar) / (vw / vh);   // photo shape relative to screen shape
               s.classList.toggle("ambient", ratio < 0.66 || ratio > 1.55);
             });
-            G = { vw, vh, first, last, xEnd, radius, whole: { x: 0, y: 0, w: vw, h: vh } };
+            const gap = parseFloat(getComputedStyle(strip).columnGap) || 0;
+            G = { vw, vh, gap, first, last, xEnd, radius, whole: { x: 0, y: 0, w: vw, h: vh } };
           };
           // place the full-screen copy so that it exactly covers `from` -> `to` rectangles at progress z
           const place = (from, to, z, r0, r1) => {
@@ -165,7 +166,7 @@
             .to(clip, { opacity: 1, duration: 0.04 }, 0)
             .to(inState, { z: 1, duration: zoomIn, ease: "power2.inOut", onUpdate: () => place(G.first, G.whole, inState.z, G.radius, 0) }, 0)
             .set(reelTrack, { x: () => G.xEnd }, zoomIn)                // hidden behind the full-screen copy
-            .fromTo(strip, { x: 0 }, { x: () => -(N - 1) * G.vw, duration: across }, zoomIn)
+            .fromTo(strip, { x: 0 }, { x: () => -(N - 1) * (G.vw + G.gap), duration: across }, zoomIn)
             .to(outState, { z: 1, duration: zoomOut, ease: "power2.inOut", onUpdate: () => place(G.whole, G.last, outState.z, 0, G.radius) }, zoomIn + across)
             .to(clip, { opacity: 0, duration: 0.04 }, total - 0.04);
 
