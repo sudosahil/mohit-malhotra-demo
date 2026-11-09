@@ -376,13 +376,12 @@ body.loading { overflow: hidden; }
 @media (max-width: 520px) { .steps { grid-template-columns: 1fr; } }
 
 /* filmstrip */
-.strip { overflow: hidden; padding: clamp(8px, 1.5vw, 20px) 0 clamp(44px, 6vw, 80px); }
-.strip-track { display: flex; gap: clamp(12px, 1.6vw, 24px); width: max-content; animation: strip 90s linear infinite; }
+.strip { overflow: hidden; padding: clamp(8px, 1.5vw, 20px) 0 clamp(44px, 6vw, 80px); cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.strip.dragging { cursor: grabbing; }
+.strip-track { display: flex; gap: clamp(12px, 1.6vw, 24px); width: max-content; will-change: transform; }
 .strip-copy { display: contents; }
-.strip:hover .strip-track, .strip-track.is-off { animation-play-state: paused; }
-.strip img { height: clamp(220px, 38vh, 400px); width: auto; flex: none; border-radius: var(--r); }
-@keyframes strip { to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) { .strip { overflow-x: auto; } .strip-track { animation: none; } }
+.strip img { height: clamp(220px, 38vh, 400px); width: auto; flex: none; border-radius: var(--r); pointer-events: none; -webkit-user-drag: none; }
+@media (prefers-reduced-motion: reduce) { .strip { overflow-x: auto; cursor: auto; } }
 
 /* page wipe */
 .wipe { position: fixed; inset: 0; z-index: 200; background: var(--surface) var(--grain); transform: translateY(100%); pointer-events: none; transition: transform .3s var(--ease); }

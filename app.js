@@ -124,6 +124,45 @@
     </a>`;
   }
 
+  /* ---------- filmstrip: glides on its own, and can be dragged, swiped or scrolled sideways in either direction ---------- */
+  function marquee(strip, track) {
+    if (!strip || !track || reduced) return;               // reduced motion: the strip is a plain scrollable row
+    const AUTO = -46;                                       // px per second, drifting left
+    let x = 0, v = AUTO, dragging = false, lastX = 0, lastT = 0, visible = true, prev = performance.now();
+    const loop = () => (track.scrollWidth + (parseFloat(getComputedStyle(track).columnGap) || 0)) / 2;   // the strip holds two identical copies
+    const apply = () => {
+      const L = loop(); if (L > 0) { x %= L; if (x > 0) x -= L; }
+      track.style.transform = "translate3d(" + x + "px,0,0)";
+    };
+    const tick = (now) => {
+      const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+      if (visible && !dragging) { v += (AUTO - v) * Math.min(1, dt * 2.2); x += v * dt; apply(); }   // after a fling the speed eases back to the drift
+      requestAnimationFrame(tick);
+    };
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(strip);
+    strip.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      dragging = true; lastX = e.clientX; lastT = performance.now(); v = 0;
+      strip.classList.add("dragging"); strip.setPointerCapture(e.pointerId);
+    });
+    strip.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const now = performance.now(), dx = e.clientX - lastX, dt = Math.max(1, now - lastT) / 1000;
+      x += dx; apply();
+      v = v * 0.6 + (dx / dt) * 0.4;                       // smoothed release speed
+      lastX = e.clientX; lastT = now;
+    });
+    const end = (e) => { if (!dragging) return; dragging = false; strip.classList.remove("dragging"); try { strip.releasePointerCapture(e.pointerId); } catch (err) { /* already released */ } };
+    strip.addEventListener("pointerup", end); strip.addEventListener("pointercancel", end);
+    // a sideways trackpad swipe or shift + wheel moves it too; plain vertical scrolling still scrolls the page
+    strip.addEventListener("wheel", (e) => {
+      const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+      if (!dx) return;
+      e.preventDefault(); x -= dx; v = -dx * 2.5; apply();
+    }, { passive: false });
+    requestAnimationFrame(tick);
+  }
+
   /* ---------- home ---------- */
   function home() {
     // hero: one frame, several photographs. Each cell keeps its own pool and swaps on its own rhythm.
@@ -184,6 +223,7 @@
     const ids = ["wm08", "album02", "wm03", "wm05", "album04", "wm06", "wm01", "album03", "wm04", "wm09", "album05", "wm02", "wm10", "wm07", "album01"];
     const row = (hide) => ids.map(id => img(id, hide ? "" : ALT[id], `loading="lazy" decoding="async"`)).join("");
     $("#strip-track").innerHTML = row(false) + `<span class="strip-copy" aria-hidden="true">${row(true)}</span>`;
+    marquee($(".strip"), $("#strip-track"));
     quotes();
   }
 

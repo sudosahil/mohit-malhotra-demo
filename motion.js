@@ -219,9 +219,6 @@
         });
       });
 
-      // the filmstrip only runs while it is on screen
-      const strip = $(".strip-track");
-      if (strip) new IntersectionObserver(([e]) => strip.classList.toggle("is-off", !e.isIntersecting)).observe(strip);
     }
 
     if (page === "portfolio") $$(".wall .tile .frame").forEach((f) => revealImage(f));
