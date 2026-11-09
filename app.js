@@ -402,6 +402,10 @@
     const mini = heroCollage.cloneNode(true);
     frame.appendChild(mini);
     el.insertBefore(frame, name);
+    // the miniature is scaled up later, so give it the hero corner radius and gap divided by that scale: they land at the real values
+    const grow = r0.width / frame.getBoundingClientRect().width;
+    mini.style.setProperty("--cgap", (parseFloat(getComputedStyle(heroCollage).columnGap) / grow) + "px");
+    mini.style.setProperty("--r", (parseFloat(getComputedStyle($(".cell", heroCollage)).borderTopLeftRadius) / grow) + "px");
     const pieces = $$(".cell", mini);
     const scatter = [[-1, -0.7, -7], [0.9, -1, 6], [1.2, 0.6, -5], [-0.9, 0.9, 5], [0.2, 1.3, 3]];   // x and y in frame widths, then rotation
     const fw = frame.getBoundingClientRect().width;
@@ -422,14 +426,13 @@
         const target = heroCollage.getBoundingClientRect();     // where the real collage is (it has the same proportions as the miniature)
         const tr = frame.getBoundingClientRect();
         const s = target.width / tr.width;
-        mini.style.setProperty("--cgap", (10 / s) + "px");       // so the gaps land at the hero's real gap
         const textRect = (node) => { const r = document.createRange(); r.selectNodeContents(node); return r.getBoundingClientRect(); };
         const from = textRect(name.firstChild), to = textRect($(".wordmark").firstChild);   // the real logo sits hidden under the loader
         gsap.timeline({ onComplete: finish })
           .to(bar, { opacity: 0, duration: 0.3 }, 0)
           .to(tag, { opacity: 0, duration: 0.35 }, 0)
           .to(frame, { x: (target.left + target.width / 2) - (tr.left + tr.width / 2), y: (target.top + target.height / 2) - (tr.top + tr.height / 2), scale: s, duration: 1.25, ease: "power3.inOut" }, 0.1)
-          .to(el, { backgroundColor: "rgba(27,30,28,0)", duration: 0.95, ease: "power1.in" }, 0.45)
+          .to(el, { backgroundColor: "rgba(84,39,46,0)", duration: 0.95, ease: "power1.in" }, 0.45)
           .to(name, { x: to.left - from.left, y: to.top - from.top, scale: to.width / from.width, duration: 1.15, ease: "power3.inOut" }, 0.12)
           .add(() => { document.body.classList.remove("loading"); ready(); }, 1.15)   // the real header fades in under the landing name; the headline starts to rise
           .to([name, el], { opacity: 0, duration: 0.3 }, 1.35);
