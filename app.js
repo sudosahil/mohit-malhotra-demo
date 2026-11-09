@@ -436,7 +436,7 @@
           .to(bar, { opacity: 0, duration: 0.3 }, 0)
           .to(tag, { opacity: 0, duration: 0.35 }, 0)
           .to(frame, { x: (target.left + target.width / 2) - (tr.left + tr.width / 2), y: (target.top + target.height / 2) - (tr.top + tr.height / 2), scale: s, duration: 1.25, ease: "power3.inOut" }, 0.1)
-          .to(el, { backgroundColor: "rgba(35,63,55,0)", duration: 0.95, ease: "power1.in" }, 0.45)
+          .to(el, { backgroundColor: "rgba(26,48,40,0)", duration: 0.95, ease: "power1.in" }, 0.45)
           .to(name, { x: to.left - from.left, y: to.top - from.top, scale: to.width / from.width, duration: 1.15, ease: "power3.inOut" }, 0.12)
           .add(() => { document.body.classList.remove("loading"); ready(); }, 1.15)   // the real header fades in under the landing name; the headline starts to rise
           .to([name, el], { opacity: 0, duration: 0.3 }, 1.35);
